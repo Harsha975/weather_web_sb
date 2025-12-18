@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,5 +27,10 @@ public class WeatherApiController {
     @GetMapping("/api/getUsers")
     public ResponseEntity<?> getUsers(){
         return new ResponseEntity<>(service.GetUser() ,HttpStatus.OK);
+    }
+
+    @GetMapping("/api/createUser")
+    public ResponseEntity<?> createUsers(@RequestBody String request){
+        return new ResponseEntity<>(service.CreateUser(request) ,HttpStatus.OK);
     }
 }
