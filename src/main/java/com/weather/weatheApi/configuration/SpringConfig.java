@@ -34,11 +34,18 @@ public class SpringConfig {
         return http
                 .csrf(custmr -> custmr.disable())
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/register","/login").permitAll()
+                        .requestMatchers(
+                                "/register",
+                                "/login",
+                                "/oauth2/**"
+
+                        )
+                        .permitAll()
                         .anyRequest().authenticated())
+                .oauth2Login(Customizer.withDefaults()) // IMPORTANT
 //                .formLogin()
                 .httpBasic(Customizer.withDefaults())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

@@ -1,9 +1,16 @@
 package com.weather.weatheApi.configuration;
 
+import com.weather.weatheApi.service.JwtService;
+import com.weather.weatheApi.service.MyUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -11,20 +18,47 @@ import java.io.IOException;
 
 @Component
 public class JwtFilter  extends OncePerRequestFilter {
+
+    @Autowired
+    private JwtService jwtServices;
+
+    @Autowired
+    private MyUserDetailsService userDetailsService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String header = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
 
         String token = null;
         String username = null;
 
-        if(header != null && header.startsWith("Bearer ")){
-            token = header.substring(7);
+        if(authHeader != null && authHeader.startsWith("Bearer ")){
+            token = authHeader.substring(7);
+
+//            eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzE5MTM2NCwiZXhwIjoxNzY3MjI3MzY0fQ._n5eRQFs8CQuOYY1Lks5V1pxUPHadd8mvGnu8InGYH8
+//            eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2NzE5MTM2NCwiZXhwIjoxNzY3MjI3MzY0fQ._n5eRQFs8CQuOYY1Lks5V1pxUPHadd8mvGnu8InGYH8
             try {
-//                username = JwtUtil.extractUsername(token);
+                username = jwtServices.extractUsername(token);
+                System.out.println("Username extracted from token: " + username);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
+
+        if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
+            // Here you can set the authentication in the security context if needed
+            System.out.println(username);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+            if(jwtServices.validateToken(token, userDetails)){
+                // Set the authentication in the context if token is valid
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            }
+        }
+        filterChain.doFilter(request, response);
     }
 }
